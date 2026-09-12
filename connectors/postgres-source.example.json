@@ -1,0 +1,17 @@
+{
+    "name": "mercury-postgres-source",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "database.hostname": "postgres",
+        "database.port": "5432",
+        "database.user": "mercury",
+        "database.password": "YOUR_POSTGRES_PASSWORD",
+        "database.dbname": "mercury",
+        "topic.prefix": "mercury",
+        "plugin.name": "pgoutput",
+        "slot.name": "mercury_debezium",
+        "publication.autocreate.mode": "filtered",
+        "table.include.list": "public.customers,public.products,public.inventory,public.orders,public.order_items,public.payments",
+        "snapshot.mode": "initial"
+    }
+}
