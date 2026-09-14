@@ -12,7 +12,7 @@ def init_state_db():
             CREATE TABLE IF NOT EXISTS order_state (
                 order_id INTEGER PRIMARY KEY,
                 status TEXT NOT NULL,
-                updated_at TEXT
+                updated_at TEXT NOT NULL
             )
             """
         )
@@ -46,6 +46,7 @@ def update_order_state(order):
             DO UPDATE SET
                 status = excluded.status,
                 updated_at = excluded.updated_at
+            WHERE excluded.updated_at > order_state.updated_at
             """,
             (
                 order["order_id"],
