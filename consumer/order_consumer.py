@@ -2,19 +2,27 @@ import json
 
 from confluent_kafka import Consumer, KafkaException
 
+from consumer.state import (
+    append_order_history,
+    init_state_db,
+    update_order_state,
+)
 
-CONSUMER_GROUP = "mercury-order-inspector-v3"
+
+CONSUMER_GROUP = "mercury-order-consumer"
 
 consumer = Consumer(
     {
         "bootstrap.servers": "localhost:9092",
         "group.id": CONSUMER_GROUP,
         "auto.offset.reset": "latest",
-        "enable.auto.commit": True,
+        "enable.auto.commit": False,
     }
 )
 
 consumer.subscribe(["mercury.public.orders"])
+
+init_state_db()
 
 print("Listening for Mercury order events...")
 print(f"Consumer group: {CONSUMER_GROUP}\n")
@@ -32,21 +40,36 @@ try:
         event = json.loads(message.value().decode("utf-8"))
         payload = event.get("payload", {})
 
-        before = payload.get("before")
         after = payload.get("after")
         operation = payload.get("op")
+
+        if after is None:
+            continue
+
+        update_order_state(after)
+
+        append_order_history(
+            topic=message.topic(),
+            partition=message.partition(),
+            offset=message.offset(),
+            order=after,
+        )
 
         print("=" * 50)
         print(f"Partition: {message.partition()}")
         print(f"Offset:    {message.offset()}")
         print(f"Operation: {operation}")
-        print(f"Before:    {before}")
-        print(f"After:     {after}")
+        print(f"Order ID:  {after['order_id']}")
+        print(f"Status:    {after['status']}")
+        print("Current state updated.")
+        print("History appended.")
         print()
 
+        consumer.commit(message=message, asynchronous=False)
+
 except KeyboardInterrupt:
-    print("\nStopping order inspector...")
+    print("\nStopping order consumer...")
 
 finally:
     consumer.close()
-    print("Order inspector stopped.")
+    print("Order consumer stopped.")
