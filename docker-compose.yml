@@ -43,6 +43,9 @@ services:
     ports:
       - "9092:9092"
 
+    volumes:
+      - kafka_data:/tmp/kafka-logs
+
   connect:
     image: quay.io/debezium/connect:3.2
     container_name: mercury-connect
@@ -69,6 +72,7 @@ services:
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       KEY_CONVERTER_SCHEMAS_ENABLE: "false"
       VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
-      
+
 volumes:
   postgres_data:
+  kafka_data:
