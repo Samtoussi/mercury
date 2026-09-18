@@ -20,6 +20,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
 
+  analytics:
+    image: postgres:17
+    container_name: mercury-analytics
+
+    environment:
+      POSTGRES_DB: ${ANALYTICS_DB}
+      POSTGRES_USER: ${ANALYTICS_USER}
+      POSTGRES_PASSWORD: ${ANALYTICS_PASSWORD}
+
+    ports:
+      - "${ANALYTICS_PORT}:5432"
+
+    volumes:
+      - analytics_data:/var/lib/postgresql/data
+      - ./analytics:/docker-entrypoint-initdb.d
+
   kafka:
     image: apache/kafka:4.0.0
     container_name: mercury-kafka
@@ -75,4 +91,5 @@ services:
 
 volumes:
   postgres_data:
+  analytics_data:
   kafka_data:
