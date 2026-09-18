@@ -40,6 +40,19 @@ def init_state_db():
             """
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS failed_events (
+                topic TEXT NOT NULL,
+                partition INTEGER NOT NULL,
+                offset INTEGER NOT NULL,
+                error_reason TEXT NOT NULL,
+                event_value TEXT NOT NULL,
+                PRIMARY KEY (topic, partition, offset)
+            )
+            """
+        )
+
 
 def update_order_state(order):
     with sqlite3.connect(DB_PATH) as connection:
@@ -106,5 +119,34 @@ def update_pipeline_metric(metric_name, metric_value):
             (
                 metric_name,
                 metric_value,
+            ),
+        )
+
+
+def append_failed_event(
+    topic,
+    partition,
+    offset,
+    error_reason,
+    event_value,
+):
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO failed_events (
+                topic,
+                partition,
+                offset,
+                error_reason,
+                event_value
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                topic,
+                partition,
+                offset,
+                error_reason,
+                event_value,
             ),
         )
