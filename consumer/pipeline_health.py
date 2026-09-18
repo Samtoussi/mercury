@@ -2,6 +2,7 @@ import json
 import sqlite3
 import time
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 from confluent_kafka import Consumer, ConsumerGroupTopicPartitions, TopicPartition
@@ -19,8 +20,12 @@ DB_PATH = Path("consumer_state.db")
 
 
 def get_connector_health():
-    with urlopen(CONNECTOR_STATUS_URL, timeout=5) as response:
-        status = json.load(response)
+    try:
+        with urlopen(CONNECTOR_STATUS_URL, timeout=5) as response:
+            status = json.load(response)
+
+    except (URLError, HTTPError):
+        return "UNREACHABLE", []
 
     connector_state = status["connector"]["state"]
     task_states = [task["state"] for task in status["tasks"]]
@@ -115,7 +120,12 @@ def main():
     print("Mercury Pipeline Health")
     print("-" * 40)
     print(f"Connector:  {connector_state}")
-    print(f"Tasks:      {', '.join(task_states)}")
+
+    if task_states:
+        print(f"Tasks:      {', '.join(task_states)}")
+    else:
+        print("Tasks:      UNKNOWN")
+
     print(f"Lag:        {lag} events")
 
     if freshness is None:
