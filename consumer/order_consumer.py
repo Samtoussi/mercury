@@ -6,6 +6,7 @@ from consumer.state import (
     append_order_history,
     init_state_db,
     update_order_state,
+    update_pipeline_metric,
 )
 
 
@@ -43,6 +44,9 @@ try:
         after = payload.get("after")
         operation = payload.get("op")
 
+        source = payload.get("source", {})
+        source_timestamp_ms = source.get("ts_ms")
+
         if after is None:
             continue
 
@@ -54,6 +58,12 @@ try:
             offset=message.offset(),
             order=after,
         )
+
+        if source_timestamp_ms is not None:
+            update_pipeline_metric(
+                "latest_source_timestamp_ms",
+                str(source_timestamp_ms),
+            )
 
         print("=" * 50)
         print(f"Partition: {message.partition()}")

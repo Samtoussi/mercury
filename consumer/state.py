@@ -31,6 +31,15 @@ def init_state_db():
             """
         )
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS pipeline_metrics (
+                metric_name TEXT PRIMARY KEY,
+                metric_value TEXT NOT NULL
+            )
+            """
+        )
+
 
 def update_order_state(order):
     with sqlite3.connect(DB_PATH) as connection:
@@ -77,5 +86,25 @@ def append_order_history(topic, partition, offset, order):
                 order["order_id"],
                 order["status"],
                 order["updated_at"],
+            ),
+        )
+
+
+def update_pipeline_metric(metric_name, metric_value):
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.execute(
+            """
+            INSERT INTO pipeline_metrics (
+                metric_name,
+                metric_value
+            )
+            VALUES (?, ?)
+            ON CONFLICT(metric_name)
+            DO UPDATE SET
+                metric_value = excluded.metric_value
+            """,
+            (
+                metric_name,
+                metric_value,
             ),
         )
