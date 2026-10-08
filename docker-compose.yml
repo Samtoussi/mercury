@@ -1,3 +1,4 @@
+
 services:
   postgres:
     image: postgres:17
@@ -36,9 +37,27 @@ services:
       - analytics_data:/var/lib/postgresql/data
       - ./analytics:/docker-entrypoint-initdb.d
 
+  kafka-init:
+    image: alpine:3.20
+    user: "0:0"
+
+    command:
+      - sh
+      - -c
+      - chown -R 1000:1000 /tmp/kafka-logs
+
+    volumes:
+      - kafka_data:/tmp/kafka-logs
+
+    restart: "no"
+
   kafka:
     image: apache/kafka:4.0.0
     container_name: mercury-kafka
+
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
 
     environment:
       KAFKA_NODE_ID: 1
@@ -81,6 +100,7 @@ services:
       STATUS_STORAGE_TOPIC: mercury_connect_statuses
 
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_TOPIC: mercury_connect_offsets
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
 
